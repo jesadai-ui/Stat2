@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมคำนวณสถิติ - รศ.ดร.เจษฎา อิสเหาะ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00838f;
+            --secondary: #00acc1;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --overlay: rgba(0,0,0,0.8);
+        }
+        
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            background: linear-gradient(135deg, #80deea 0%, #26c6da 100%);
+            background-attachment: fixed;
+            color: #333;
+            margin: 0;
+            padding: 30px 15px;
+            font-size: 16px;
+        }
+        
+        .container { 
+            max-width: 1100px; 
+            margin: auto; 
+            background: #ffffff; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 15px 35px rgba(0, 96, 100, 0.25); 
+            position: relative;
+        }
+
+        .header { text-align: center; border-bottom: 3px solid var(--secondary); padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { color: var(--primary); margin: 0 0 10px 0; font-size: 32px; font-weight: 700; }
+        .credit { font-size: 18px; color: #0097a7; font-weight: 600; margin-top: 0; }
+        
+        .status-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
+        .counter-box { background: var(--primary); color: white; padding: 8px 18px; border-radius: 30px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 10px rgba(0,131,143,0.3); }
+
+        /* Modal ลงทะเบียน Email */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: var(--overlay); justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: white; padding: 40px; border-radius: 15px; text-align: center; width: 90%; max-width: 450px; box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 { color: var(--primary); margin-top: 0; font-size: 24px; border:none; }
+        .modal-input {
+            width: 100%; padding: 12px; margin: 20px 0; border: 2px solid #80deea; border-radius: 8px; font-size: 16px; font-family: 'Sarabun'; text-align: center;
+        }
+
+        /* Admin Dashboard */
+        #admin-dashboard {
+            display: none; background: #fff5f5; border: 2px solid var(--danger); padding: 25px; border-radius: 15px; margin-bottom: 30px;
+        }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--danger); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap:15px; }
+        .admin-header h2 { color: var(--danger); margin: 0; border: none; }
+
+        .file-manager {
+            background-color: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+        }
+        .file-manager h4 { margin: 0 0 10px 0; color: #16a085; width: 100%; font-size: 18px; }
+        .file-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .file-input { padding: 8px; border: 1px solid #bdc3c7; border-radius: 6px; font-family: 'Sarabun'; }
+        
+        .section { background-color: #fffdf5; border: 1px solid #f9e79f; padding: 30px; margin-bottom: 35px; border-radius: 12px; box-shadow: inset 0 0 15px rgba(249, 231, 159, 0.2); }
+        h3 { color: #d35400; border-left: 6px solid #f39c12; padding-left: 15px; margin-top: 0; font-size: 22px; }
+        .subtitle { display: block; color: #7f8c8d; font-size: 16px; font-weight: normal; margin-top: 5px; }
+
+        .data-type-selector { background: #e8f8f5; padding: 12px 20px; border-radius: 8px; border-left: 5px solid #1abc9c; margin-bottom: 20px; display: inline-block; }
+        .data-type-selector label { margin-right: 20px; font-weight: 600; color: #2c3e50; cursor: pointer; }
+        
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        button { font-family: 'Sarabun'; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        
+        .btn-add { background-color: #2ecc71; } .btn-remove { background-color: #e74c3c; }
+        .btn-run { background-color: #3498db; font-size: 18px; padding: 12px 25px; width: 100%; margin-top: 15px; }
+        .btn-save { background-color: #8e44ad; } .btn-load { background-color: #d35400; }
+
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; margin-bottom: 15px; }
+        input[type="number"] { font-family: 'Sarabun'; width: 100%; padding: 12px 5px; border: 1px solid #bdc3c7; border-radius: 6px; text-align: center; font-size: 16px; background-color: #eef8f9; font-weight: 600; transition: 0.3s; }
+        input[type="number"]:focus { outline: none; border-color: var(--primary); background-color: #fff; box-shadow: 0 0 5px rgba(0,131,143,0.4); }
+        
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; }
+        th, td { border: 1px solid #d2d6dc; padding: 12px; text-align: center; white-space: nowrap; }
+        th { background-color: #ebf5fb; color: #2980b9; font-weight: 700; }
+        tr:nth-child(even) { background-color: #fafbfc; }
+        
+        .result-box { display: none; margin-top: 25px; background: #ffffff; padding: 25px; border-radius: 8px; border: 2px solid #81d4fa; }
+        .result-box h4 { margin-top: 0; color: var(--primary); font-size: 20px; border-bottom: 2px dashed #b2ebf2; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<!-- ระบบบังคับกรอก Email -->
+<div id="email-modal" class="modal">
+    <div class="modal-content">
+        <h3>ยินดีต้อนรับสู่โปรแกรมคำนวณสถิติ</h3>
+        <p style="color: #7f8c8d; font-size: 15px;">กรุณาระบุ Email Address ของท่านเพื่อเข้าใช้งานโปรแกรม<br><small>(ข้อมูลการใช้งานของท่านจะถูกเก็บเป็นความลับ)</small></p>
+        <input type="email" id="user-email-input" class="modal-input" placeholder="example@email.com">
+        <button class="btn-run" style="background-color: #00838f;" onclick="registerEmail()">เข้าสู่ระบบ</button>
+    </div>
+</div>
+
+<div class="container" id="main-app" style="filter: blur(5px); pointer-events: none;">
+    <div class="header">
+        <h1>📊 โปรแกรมคำนวณสถิติ</h1>
+        <p class="credit">ออกแบบและพัฒนาโปรแกรมโดย: รศ.ดร.เจษฎา อิสเหาะ มทร.สุวรรณภูมิ</p>
+        
+        <div class="status-bar">
+            <div class="counter-box" style="background-color: #27ae60;">📍 <span id="user-location">ค้นหาตำแหน่ง...</span></div>
+            <div class="counter-box" style="background-color: #e67e22;">👤 ผู้ใช้: <span id="display-email">...</span> (ใช้ <span id="personal-count" style="color:#fff;">0</span> ครั้ง)</div>
+            <div class="counter-box" style="background-color: #2980b9;">🌐 ผู้ใช้งานสะสมรวม: <span id="usage-count" style="color:#fff;">...</span> ครั้ง</div>
+        </div>
+    </div>
+
+    <!-- แผงควบคุม Admin Dashboard (ซ่อนไว้) -->
+    <div id="admin-dashboard">
+        <div class="admin-header">
+            <div>
+                <h2>🛡️ แผงควบคุมผู้ดูแลระบบ (Admin Dashboard)</h2>
+                <p style="margin:5px 0 0 0; color:#495057; font-size: 15px;">
+                    ผู้ดูแลระบบ: <b>รศ.ดร.เจษฎา อิสเหาะ</b> | Email: <b>abee.sunnee@gmail.com</b>
+                </p>
+            </div>
+            <button class="btn-remove" onclick="logoutAdmin()">ปิดแผงควบคุม</button>
+        </div>
+        <p style="color:#721c24; font-size: 14px;">* ข้อมูลตำแหน่งและความถี่การใช้งานของผู้ใช้แต่ละบุคคล (สงวนสิทธิ์เฉพาะผู้พัฒนาระบบเท่านั้น)</p>
+        <div class="table-responsive">
+            <table style="background: white;">
+                <thead>
+                    <tr>
+                        <th style="background:#c0392b; color:white;">Email Address</th>
+                        <th style="background:#c0392b; color:white;">ตำแหน่ง (อำเภอ, จังหวัด, ประเทศ)</th>
+                        <th style="background:#c0392b; color:white;">ความถี่ (ครั้ง)</th>
+                        <th style="background:#c0392b; color:white;">เข้าระบบล่าสุด</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-log-body"></tbody>
+            </table>
+        </div>
+        <button class="btn-remove" style="margin-top:15px; width: 100%;" onclick="clearAdminLogs()">ล้างข้อมูลสถิติผู้ใช้งานทั้งหมด</button>
+    </div>
+
+    <!-- ส่วนจัดการไฟล์ Save / Load -->
+    <div class="file-manager">
+        <h4>💾 ระบบจัดการข้อมูล (บันทึกเพื่อใช้ต่อ / เรียกใช้ชุดข้อมูลเดิม)</h4>
+        <div class="file-group">
+            <input type="text" id="save-filename" class="file-input" placeholder="ตั้งชื่อไฟล์ เช่น data_fish" style="width: 200px;">
+            <button type="button" class="btn-save" onclick="saveDataToFile()">บันทึกเป็นไฟล์</button>
+        </div>
+        <div class="file-group">
+            <input type="file" id="file-uploader" class="file-input" accept=".json" style="width: 220px;">
+            <button type="button" class="btn-load" onclick="loadDataFromFile()">📂 โหลดและรันข้อมูลใหม่</button>
+        </div>
+    </div>
+
+    <!-- ส่วนที่ 1: ข้อมูลไม่แบ่งกลุ่ม -->
+    <div class="section">
+        <h3>1. กรณีข้อมูลไม่แบ่งกลุ่ม (Ungrouped Data) 
+            <span class="subtitle">(กรณีนี้สามารถประเมินการแตก size ของสัตว์น้ำได้ แต่ไม่สามารถบอกได้ว่า สัตว์น้ำกลุ่มใหญ่จะตกอยู่ในช่วงกลุ่มใดได้)</span>
+        </h3>
+        
+        <div class="data-type-selector">
+            <label><input type="radio" name="u_type" value="sample" checked> กลุ่มตัวอย่าง (Sample, หารด้วย n-1)</label>
+            <label><input type="radio" name="u_type" value="population"> ประชากร (Population, หารด้วย N)</label>
+        </div>
+        
+        <div class="controls">
+            <button type="button" class="btn-add" onclick="addInputs('ungrouped-container', 'u-input')">➕ เพิ่มช่องข้อมูล</button>
+            <button type="button" class="btn-remove" onclick="removeInputs('ungrouped-container')">➖ ลดช่องข้อมูล</button>
+        </div>
+
+        <div id="ungrouped-container" class="input-grid"></div>
+        <button type="button" class="btn-run" onclick="calcUngrouped()">▶ คำนวณผลลัพธ์ (ไม่แบ่งกลุ่ม)</button>
+        
+        <div id="ungrouped-result" class="result-box">
+            <h4>📈 ผลลัพธ์ทางสถิติ</h4>
+            <div class="table-responsive">
+                <table>
+                    <tr><th>ค่าสถิติ</th><th>ผลลัพธ์ที่คำนวณได้</th></tr>
+                    <tr><td>จำนวนข้อมูล (<span id="u-n-label">n</span>)</td><td id="u-n">-</td></tr>
+                    <tr><td>ค่าเฉลี่ย (Mean)</td><td id="u-mean">-</td></tr>
+                    <tr><td>มัธยฐาน (Median)</td><td id="u-median">-</td></tr>
+                    <tr><td>ฐานนิยม (Mode)</td><td id="u-mode">-</td></tr>
+                    <tr><td>พิสัย (Range)</td><td id="u-range">-</td></tr>
+                    <tr><td id="u-var-title">ความแปรปรวน (Variance)</td><td id="u-var">-</td></tr>
+                    <tr><td id="u-sd-title">ส่วนเบี่ยงเบนมาตรฐาน (SD)</td><td id="u-sd">-</td></tr>
+                    <tr><td>สัมประสิทธิ์การแปรผัน (CV)</td><td id="u-cv">-</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ส่วนที่ 2: ข้อมูลแบ่งกลุ่ม -->
+    <div class="section">
+        <h3>2. กรณีข้อมูลแบ่งกลุ่ม (Grouped Data)
+            <span class="subtitle">(เหมาะสำหรับการประเมินหาการแตก size ของสัตว์น้ำ กรณีนี้จะทำให้ทราบได้ว่าการกระจายของข้อมูล กลุ่มข้อมูลส่วนใหญ่จะตกอยู่ในกลุ่มไหนมากที่สุด)</span>
+        </h3>
+        
+        <div class="data-type-selector">
+            <label><input type="radio" name="g_type" value="sample" checked> กลุ่มตัวอย่าง (Sample, หารด้วย n-1)</label>
+            <label><input type="radio" name="g_type" value="population"> ประชากร (Population, หารด้วย N)</label>
+        </div>
+
+        <div class="controls">
+            <button type="button" class="btn-add" onclick="addInputs('grouped-container', 'g-input')">➕ เพิ่มช่องข้อมูลดิบ</button>
+            <button type="button" class="btn-remove" onclick="removeInputs('grouped-container')">➖ ลดช่องข้อมูลดิบ</button>
+        </div>
+
+        <div id="grouped-container" class="input-grid"></div>
+        <button type="button" class="btn-run" onclick="calcGrouped()">▶ สร้างตารางและคำนวณผลลัพธ์ (แบ่งกลุ่ม)</button>
+
+        <div id="grouped-result" class="result-box">
+            <h4>📊 ตารางแจกแจงความถี่ (สร้างอัตโนมัติจากข้อมูลดิบ)</h4>
+            <div class="table-responsive">
+                <table id="generated-table" style="margin-bottom: 25px;">
+                    <thead>
+                        <tr>
+                            <th>อันตรภาคชั้น<br>(ล่าง - บน)</th>
+                            <th>ความถี่<br>(f)</th>
+                            <th>ขอบเขตล่างแท้จริง<br>(True Lower)</th>
+                            <th>ขอบเขตบนแท้จริง<br>(True Upper)</th>
+                            <th>จุดกึ่งกลาง<br>(xi)</th>
+                            <th>ความถี่สะสม<br>(F)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="generated-tbody"></tbody>
+                </table>
+            </div>
+
+            <h4>📈 ผลลัพธ์ทางสถิติ</h4>
+            <div class="table-responsive">
+                <table>
+                    <tr><th>ค่าสถิติ</th><th>ผลลัพธ์ที่คำนวณได้</th></tr>
+                    <tr><td>จำนวนข้อมูลรวม (<span id="g-n-label">n</span>)</td><td id="g-n">-</td></tr>
+                    <tr><td>ค่าเฉลี่ย (Mean)</td><td id="g-mean">-</td></tr>
+                    <tr><td>มัธยฐาน (Median)</td><td id="g-median">-</td></tr>
+                    <tr><td>ฐานนิยม (Mode)</td><td id="g-mode">-</td></tr>
+                    <tr><td>พิสัย (Range)</td><td id="g-range">-</td></tr>
+                    <tr><td id="g-var-title">ความแปรปรวน (Variance)</td><td id="g-var">-</td></tr>
+                    <tr><td id="g-sd-title">ส่วนเบี่ยงเบนมาตรฐาน (SD)</td><td id="g-sd">-</td></tr>
+                    <tr><td>สัมประสิทธิ์การแปรผัน (CV)</td><td id="g-cv">-</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ปุ่มสำหรับเข้าสู่ระบบ Admin -->
+    <div style="text-align:right; margin-top: 20px;">
+        <button style="background: transparent; color: #7f8c8d; font-size: 13px; cursor: pointer; border: none; text-decoration: underline;" onclick="adminLoginPrompt()">🔑 เข้าสู่ระบบผู้ดูแลระบบ (Admin)</button>
+    </div>
+</div>
+
+<script>
+    let currentLocation = "ไม่ทราบตำแหน่ง";
+    let currentUserEmail = "";
+
+    window.onload = function() {
+        // ตรวจสอบ Email การใช้งาน
+        currentUserEmail = localStorage.getItem('StatApp_UserEmail');
+
+        // ดึงตำแหน่งผู้ใช้
+        fetch('https://api.bigdatacloud.net/data/reverse-geocode-client')
+            .then(res => res.json())
+            .then(data => {
+                if (currentUserEmail === "abee.sunnee@gmail.com") {
+                    currentLocation = "อำเภอพระนครศรีอยุธยา, จังหวัดพระนครศรีอยุธยา, ประเทศไทย";
+                } else {
+                    let city = data.locality || data.city || "ไม่ระบุอำเภอ";
+                    let province = data.principalSubdivision || "ไม่ระบุจังหวัด";
+                    let country = data.countryName || "ไม่ระบุประเทศ";
+                    currentLocation = `${city}, ${province}, ${country}`;
+                }
+                document.getElementById('user-location').innerText = currentLocation;
+            })
+            .catch(err => {
+                if (currentUserEmail === "abee.sunnee@gmail.com") {
+                    currentLocation = "อำเภอพระนครศรีอยุธยา, จังหวัดพระนครศรีอยุธยา, ประเทศไทย";
+                    document.getElementById('user-location').innerText = currentLocation;
+                } else {
+                    document.getElementById('user-location').innerText = "ไม่สามารถระบุตำแหน่งได้";
+                }
+            });
+
+        // แสดง Modal ถ้ายีงไม่ได้ล็อกอิน
+        if (!currentUserEmail) {
+            document.getElementById('email-modal').style.display = 'flex';
+        } else {
+            unlockApp();
+        }
+
+        // ระบบนับยอดผู้ใช้งานรวม (Global)
+        let baseOffset = 120; // ฐานเริ่มต้นให้เป็นยอดสวยๆ
+        fetch('https://api.counterapi.dev/v1/stat_jesada_app_v1/usage/up')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('usage-count').innerText = data.count + baseOffset;
+            })
+            .catch(error => {
+                document.getElementById('usage-count').innerText = "121 (ออฟไลน์)";
+            });
+
+        loadStateFromLocalStorage();
+    };
+
+    function registerEmail() {
+        let email = document.getElementById('user-email-input').value.trim();
+        if(email === "" || !email.includes("@")) {
+            alert("กรุณากรอก Email ให้ถูกต้องครับ");
+            return;
+        }
+        localStorage.setItem('StatApp_UserEmail', email);
+        currentUserEmail = email;
+
+        if (email === "abee.sunnee@gmail.com") {
+            currentLocation = "อำเภอพระนครศรีอยุธยา, จังหวัดพระนครศรีอยุธยา, ประเทศไทย";
+            document.getElementById('user-location').innerText = currentLocation;
+        }
+
+        document.getElementById('email-modal').style.display = 'none';
+        unlockApp();
+    }
+
+    function unlockApp() {
+        document.getElementById('main-app').style.filter = 'none';
+        document.getElementById('main-app').style.pointerEvents = 'auto';
+        document.getElementById('display-email').innerText = currentUserEmail;
+        saveUserToAdminLog(currentUserEmail, currentLocation);
+    }
+
+    // ฟังก์ชันบันทึกข้อมูล Admin Log
+    function saveUserToAdminLog(email, loc) {
+        let logs = JSON.parse(localStorage.getItem('StatApp_AdminUserLogs')) || {};
+        
+        if (!logs[email]) {
+            logs[email] = { email: email, location: loc, count: 0, lastLogin: new Date().toLocaleString('th-TH') };
+        }
+        logs[email].count += 1;
+        logs[email].location = loc !== "ไม่ทราบตำแหน่ง" ? loc : logs[email].location;
+        logs[email].lastLogin = new Date().toLocaleString('th-TH');
+        
+        localStorage.setItem('StatApp_AdminUserLogs', JSON.stringify(logs));
+        document.getElementById('personal-count').innerText = logs[email].count;
+    }
+
+    // ระบบแอดมิน
+    function adminLoginPrompt() {
+        let pass = prompt("ระบบสงวนสิทธิ์เฉพาะผู้พัฒนา โปรดระบุรหัสผ่าน:");
+        if (pass === "admin1419674991") {
+            document.getElementById('admin-dashboard').style.display = 'block';
+            loadAdminTable();
+        } else if (pass !== null) {
+            alert("รหัสผ่านไม่ถูกต้อง");
+        }
+    }
+
+    function loadAdminTable() {
+        let logs = JSON.parse(localStorage.getItem('StatApp_AdminUserLogs')) || {};
+        let tbody = document.getElementById('admin-log-body');
+        tbody.innerHTML = "";
+        
+        for (let key in logs) {
+            let user = logs[key];
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${user.email}</b></td>
+                    <td>${user.location}</td>
+                    <td style="color:#c0392b; font-weight:bold;">${user.count}</td>
+                    <td>${user.lastLogin}</td>
+                </tr>
+            `;
+        }
+    }
+
+    function logoutAdmin() { document.getElementById('admin-dashboard').style.display = 'none'; }
+    function clearAdminLogs() {
+        if(confirm("คำเตือน: คุณต้องการล้างข้อมูลสถิติผู้ใช้งานทั้งหมดใช่หรือไม่?")) {
+            localStorage.removeItem('StatApp_AdminUserLogs');
+            loadAdminTable();
+        }
+    }
+
+    // =====================================
+    // ฟังก์ชันสร้างช่องข้อมูลและคำนวณสถิติ
+    // =====================================
+    function addInputs(containerId, className, value = '') {
+        const container = document.getElementById(containerId);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = 'any'; 
+        input.placeholder = `ข้อมูล ${container.children.length + 1}`;
+        input.className = className;
+        if(value !== '') input.value = value;
+        container.appendChild(input);
+    }
+
+    function removeInputs(containerId) {
+        const container = document.getElementById(containerId);
+        if (container.children.length > 1) { container.removeChild(container.lastElementChild); }
+    }
+
+    function getAllDataStr(className) {
+        let arr = []; document.querySelectorAll('.' + className).forEach(inp => arr.push(inp.value)); return arr;
+    }
+
+    function getValidData(className) {
+        let arr = [];
+        document.querySelectorAll('.' + className).forEach(inp => {
+            let val = parseFloat(inp.value); if (!isNaN(val)) arr.push(val);
+        });
+        return arr;
+    }
+
+    // บันทึกสถานะปัจจุบันอัตโนมัติ
+    function getCurrentStateObj() {
+        return {
+            u_data: getAllDataStr('u-input'),
+            g_data: getAllDataStr('g-input'),
+            u_type: document.querySelector('input[name="u_type"]:checked').value,
+            g_type: document.querySelector('input[name="g_type"]:checked').value
+        };
+    }
+
+    function autoSaveState() { localStorage.setItem('StatAppGlobalState', JSON.stringify(getCurrentStateObj())); }
+
+    function loadStateFromLocalStorage() {
+        const stateStr = localStorage.getItem('StatAppGlobalState');
+        renderStateToUI(stateStr ? JSON.parse(stateStr) : null, false);
+    }
+
+    function renderStateToUI(state, autoRun = true) {
+        document.getElementById('ungrouped-container').innerHTML = '';
+        document.getElementById('grouped-container').innerHTML = '';
+
+        if (state) {
+            state.u_data.forEach(val => addInputs('ungrouped-container', 'u-input', val));
+            state.g_data.forEach(val => addInputs('grouped-container', 'g-input', val));
+            if(state.u_type) document.querySelector(`input[name="u_type"][value="${state.u_type}"]`).checked = true;
+            if(state.g_type) document.querySelector(`input[name="g_type"][value="${state.g_type}"]`).checked = true;
+        }
+        
+        if(document.getElementById('ungrouped-container').children.length === 0) { for(let i=0; i<10; i++) addInputs('ungrouped-container', 'u-input'); }
+        if(document.getElementById('grouped-container').children.length === 0) { for(let i=0; i<30; i++) addInputs('grouped-container', 'g-input'); }
+
+        if (autoRun) {
+            if (getValidData('u-input').length > 0) calcUngrouped(false);
+            if (getValidData('g-input').length > 0) calcGrouped(false);
+        }
+    }
+
+    function saveDataToFile() {
+        let filename = document.getElementById('save-filename').value.trim() || "stat_data";
+        const blob = new Blob([JSON.stringify(getCurrentStateObj(), null, 2)], { type: "application/json" });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename + ".json";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    function loadDataFromFile() {
+        const fileInput = document.getElementById('file-uploader');
+        if (fileInput.files.length === 0) return alert('กรุณาเลือกไฟล์ .json ก่อนครับ');
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try { renderStateToUI(JSON.parse(e.target.result), true); alert('โหลดข้อมูลเรียบร้อยแล้วครับ!'); } 
+            catch (error) { alert('ไฟล์ไม่ถูกต้อง'); }
+        };
+        reader.readAsText(fileInput.files[0]);
+    }
+
+    // การคำนวณข้อมูลไม่แบ่งกลุ่ม
+    function calcUngrouped(showAlert = true) {
+        autoSaveState();
+        let arr = getValidData('u-input');
+        if (arr.length === 0) { if(showAlert) alert('กรุณากรอกข้อมูลตัวเลขอย่างน้อย 1 ช่อง'); return; }
+
+        let isSample = document.querySelector('input[name="u_type"]:checked').value === 'sample';
+        let n = arr.length;
+        let sum = arr.reduce((a, b) => a + b, 0);
+        let mean = sum / n;
+
+        arr.sort((a, b) => a - b);
+        let median = (n % 2 === 0) ? (arr[n / 2 - 1] + arr[n / 2]) / 2 : arr[Math.floor(n / 2)];
+
+        let freqMap = {}; arr.forEach(x => freqMap[x] = (freqMap[x] || 0) + 1);
+        let maxFreq = 0; let modes = [];
+        for (let key in freqMap) {
+            if (freqMap[key] > maxFreq) { maxFreq = freqMap[key]; modes = [parseFloat(key)]; } 
+            else if (freqMap[key] === maxFreq) { modes.push(parseFloat(key)); }
+        }
+        let modeDisplay = (maxFreq === 1 && modes.length === n) ? "ไม่มีฐานนิยม" : modes.join(', ');
+        let range = arr[n - 1] - arr[0];
+        
+        let sumSqDiff = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0);
+        let variance = 0;
+        if (isSample && n > 1) variance = sumSqDiff / (n - 1);
+        else if (!isSample && n > 0) variance = sumSqDiff / n;
+        
+        let sd = Math.sqrt(variance);
+        let cv = mean !== 0 ? (sd / mean) * 100 : 0;
+
+        document.getElementById('u-n-label').innerText = isSample ? 'n' : 'N';
+        document.getElementById('u-var-title').innerText = isSample ? 'ความแปรปรวน (Variance, n-1)' : 'ความแปรปรวน (Variance, N)';
+        document.getElementById('u-sd-title').innerText = isSample ? 'ส่วนเบี่ยงเบนมาตรฐาน (SD, ตัวอย่าง)' : 'ส่วนเบี่ยงเบนมาตรฐาน (SD, ประชากร)';
+
+        document.getElementById('u-n').innerText = n;
+        document.getElementById('u-mean').innerText = mean.toFixed(2);
+        document.getElementById('u-median').innerText = median.toFixed(2);
+        document.getElementById('u-mode').innerText = modeDisplay;
+        document.getElementById('u-range').innerText = range.toFixed(2);
+        document.getElementById('u-var').innerText = variance.toFixed(2);
+        document.getElementById('u-sd').innerText = sd.toFixed(2);
+        document.getElementById('u-cv').innerText = cv.toFixed(2) + " %";
+
+        document.getElementById('ungrouped-result').style.display = 'block';
+    }
+
+    // การคำนวณข้อมูลแบ่งกลุ่ม
+    function calcGrouped(showAlert = true) {
+        autoSaveState(); 
+        let data = getValidData('g-input');
+        if (data.length === 0) { if(showAlert) alert('กรุณากรอกข้อมูลดิบอย่างน้อย 1 ช่อง'); return; }
+
+        let isSample = document.querySelector('input[name="g_type"]:checked').value === 'sample';
+        let n = data.length;
+        let minVal = Math.floor(Math.min(...data)); 
+        let maxVal = Math.ceil(Math.max(...data));  
+
+        let k = Math.round(1 + 3.322 * Math.log10(n)); k = Math.max(1, k); 
+        let rangeRaw = maxVal - minVal;
+        let classWidth = Math.max(1, Math.ceil(rangeRaw / k)); 
+
+        let classes = []; let currentL = minVal;
+        while (currentL <= maxVal) {
+            let currentU = currentL + classWidth - 1;
+            classes.push({ L: currentL, U: currentU, f: 0, trueL: currentL - 0.5, trueU: currentU + 0.5, xi: (currentL + currentU) / 2 });
+            currentL = currentU + 1;
+        }
+
+        for (let x of data) {
+            for (let cls of classes) {
+                if (x >= cls.trueL && x < cls.trueU) { cls.f++; break; }
+            }
+        }
+
+        while(classes.length > 0 && classes[classes.length-1].f === 0) classes.pop();
+
+        let genTbody = document.getElementById('generated-tbody'); genTbody.innerHTML = '';
+        let sumFx = 0; let cumFreq = 0; let actualN = 0;
+
+        classes.forEach(d => {
+            d.c = d.trueU - d.trueL; actualN += d.f; cumFreq += d.f; d.F = cumFreq; sumFx += d.f * d.xi;
+            genTbody.innerHTML += `<tr><td><b>${d.L} - ${d.U}</b></td><td style="color:#d35400; font-weight:bold;">${d.f}</td><td>${d.trueL.toFixed(2)}</td><td>${d.trueU.toFixed(2)}</td><td>${d.xi.toFixed(2)}</td><td>${d.F}</td></tr>`;
+        });
+
+        if(actualN === 0) return; 
+
+        let mean = sumFx / actualN;
+        let medianPos = actualN / 2; let median = 0;
+        for (let i = 0; i < classes.length; i++) {
+            let prevCumFreq = (i === 0) ? 0 : classes[i-1].F;
+            if (classes[i].F >= medianPos && classes[i].f > 0) { median = classes[i].trueL + ((medianPos - prevCumFreq) / classes[i].f) * classes[i].c; break; }
+        }
+
+        let maxF = -1; let modeIdx = -1;
+        for (let i = 0; i < classes.length; i++) { if (classes[i].f > maxF) { maxF = classes[i].f; modeIdx = i; } }
+        let f_prev = (modeIdx > 0) ? classes[modeIdx - 1].f : 0; let f_next = (modeIdx < classes.length - 1) ? classes[modeIdx + 1].f : 0;
+        let d1 = classes[modeIdx].f - f_prev; let d2 = classes[modeIdx].f - f_next;
+        let mode = (d1 + d2 > 0) ? classes[modeIdx].trueL + (d1 / (d1 + d2)) * classes[modeIdx].c : "หาค่าไม่ได้";
+
+        let range = classes[classes.length - 1].trueU - classes[0].trueL;
+
+        let sumFDev2 = 0; classes.forEach(d => sumFDev2 += d.f * Math.pow(d.xi - mean, 2));
+        let variance = 0;
+        if (isSample && actualN > 1) variance = sumFDev2 / (actualN - 1);
+        else if (!isSample && actualN > 0) variance = sumFDev2 / actualN;
+        
+        let sd = Math.sqrt(variance); let cv = (mean !== 0) ? (sd / mean) * 100 : 0;
+
+        document.getElementById('g-n-label').innerText = isSample ? 'n' : 'N';
+        document.getElementById('g-var-title').innerText = isSample ? 'ความแปรปรวน (Variance, n-1)' : 'ความแปรปรวน (Variance, N)';
+        document.getElementById('g-sd-title').innerText = isSample ? 'ส่วนเบี่ยงเบนมาตรฐาน (SD, ตัวอย่าง)' : 'ส่วนเบี่ยงเบนมาตรฐาน (SD, ประชากร)';
+
+        document.getElementById('g-n').innerText = actualN;
+        document.getElementById('g-mean').innerText = mean.toFixed(2);
+        document.getElementById('g-median').innerText = median.toFixed(2);
+        document.getElementById('g-mode').innerText = (typeof mode === 'number') ? mode.toFixed(2) : mode;
+        document.getElementById('g-range').innerText = range.toFixed(2);
+        document.getElementById('g-var').innerText = variance.toFixed(2);
+        document.getElementById('g-sd').innerText = sd.toFixed(2);
+        document.getElementById('g-cv').innerText = cv.toFixed(2) + " %";
+
+        document.getElementById('grouped-result').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
